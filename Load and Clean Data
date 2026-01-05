@@ -1,1 +1,183 @@
 
+CREATE TABLE divvy_trips_2024(
+    ride_id VARCHAR(50),
+    rideable_type VARCHAR(50),
+    started_at TIMESTAMP,
+    ended_at TIMESTAMP,
+    start_station_name TEXT,
+    start_station_id VARCHAR(50),
+    end_station_name TEXT,
+    end_station_id VARCHAR(50),
+    start_lat DOUBLE PRECISION,
+    start_lng DOUBLE PRECISION,
+    end_lat DOUBLE PRECISION,
+    end_lng DOUBLE PRECISION,
+    member_casual VARCHAR(20)
+);
+
+Select * from divvy_trips_2024;
+
+--January
+COPY divvy_trips_2024
+FROM 'C:\Users\Public\Test\202401-divvy-tripdata.csv'
+DELIMITER ','
+CSV HEADER;
+
+--February
+COPY divvy_trips_2024
+FROM 'C:\Users\Public\Test\202402-divvy-tripdata.csv'
+DELIMITER ','
+CSV HEADER;
+
+--March
+COPY divvy_trips_2024
+FROM 'C:\Users\Public\Test\202403-divvy-tripdata.csv'
+DELIMITER ','
+CSV HEADER;
+
+--April
+COPY divvy_trips_2024
+FROM 'C:\Users\Public\Test\202404-divvy-tripdata.csv'
+DELIMITER ','
+CSV HEADER;
+
+--May
+COPY divvy_trips_2024
+FROM 'C:\Users\Public\Test\202405-divvy-tripdata.csv'
+DELIMITER ','
+CSV HEADER;
+
+--June
+COPY divvy_trips_2024
+FROM 'C:\Users\Public\Test\202406-divvy-tripdata.csv'
+DELIMITER ','
+CSV HEADER;
+
+--July
+COPY divvy_trips_2024
+FROM 'C:\Users\Public\Test\202407-divvy-tripdata.csv'
+DELIMITER ','
+CSV HEADER;
+
+--August
+COPY divvy_trips_2024
+FROM 'C:\Users\Public\Test\202408-divvy-tripdata.csv'
+DELIMITER ','
+CSV HEADER;
+
+--September
+COPY divvy_trips_2024
+FROM 'C:\Users\Public\Test\202409-divvy-tripdata.csv'
+DELIMITER ','
+CSV HEADER;
+
+--October
+COPY divvy_trips_2024
+FROM 'C:\Users\Public\Test\202410-divvy-tripdata.csv'
+DELIMITER ','
+CSV HEADER;
+
+--November
+COPY divvy_trips_2024
+FROM 'C:\Users\Public\Test\202411-divvy-tripdata.csv'
+DELIMITER ','
+CSV HEADER;
+
+--December
+COPY divvy_trips_2024
+FROM 'C:\Users\Public\Test\202412-divvy-tripdata.csv'
+DELIMITER ','
+CSV HEADER;
+
+SELECT COUNT(*) FROM divvy_trips_2024;
+
+--Create backup
+CREATE TABLE divvy_trips_2024_backup AS SELECT * FROM divvy_trips_2024;
+
+SELECT * FROM divvy_trips_2024_backup
+
+--Drop table
+ALTER TABLE divvy_trips_2024 DROP COLUMN ride_id;
+
+ALTER TABLE divvy_trips_2024 DROP COLUMN start_station_name;
+
+ALTER TABLE divvy_trips_2024 DROP COLUMN start_station_id;
+
+ALTER TABLE divvy_trips_2024 DROP COLUMN end_station_id;
+
+ALTER TABLE divvy_trips_2024 DROP COLUMN end_station_name;
+
+ALTER TABLE divvy_trips_2024 DROP COLUMN start_lat;
+
+ALTER TABLE divvy_trips_2024 DROP COLUMN start_lng;
+
+ALTER TABLE divvy_trips_2024 DROP COLUMN end_lat;
+
+ALTER TABLE divvy_trips_2024 DROP COLUMN end_lng;
+
+
+SELECT * FROM divvy_trips_2024
+
+--Add column needed
+--start_time
+ALTER TABLE divvy_trips_2024
+ADD COLUMN start_time TIME;
+
+UPDATE divvy_trips_2024
+SET 
+    start_time = started_at::TIME;
+
+--start_date
+ALTER TABLE divvy_trips_2024
+ADD COLUMN start_date DATE;
+
+UPDATE divvy_trips_2024
+SET 
+    start_date = started_at::DATE;
+
+--start_month
+ALTER TABLE divvy_trips_2024
+ADD COLUMN start_month VARCHAR(20);
+
+UPDATE divvy_trips_2024
+SET 
+    start_month = TO_CHAR(started_at, 'Month');
+
+--Duration
+ALTER TABLE divvy_trips_2024
+ADD COLUMN duration_minutes DECIMAL(10,2);
+
+UPDATE divvy_trips_2024
+SET duration_minutes = 
+    EXTRACT(EPOCH FROM (ended_at - started_at)) / 60;
+
+SELECT * FROM divvy_trips_2024
+
+--Cleaning
+
+--null value
+SELECT COUNT(*) as total_rows_with_nulls
+FROM divvy_trips_2024
+WHERE rideable_type IS NULL
+   OR started_at IS NULL
+   OR ended_at IS NULL
+   OR member_casual IS NULL
+   OR start_time IS NULL
+   OR start_date IS NULL
+   OR start_month IS NULL
+   OR duration_minutes IS NULL;
+
+--empty value
+--whitespace
+SELECT 
+    SUM(CASE WHEN rideable_type ~ '^\s*$' AND rideable_type != '' THEN 1 ELSE 0 END) as whitespace_rideable_type,
+    SUM(CASE WHEN member_casual ~ '^\s*$' AND member_casual != '' THEN 1 ELSE 0 END) as whitespace_member_casual,
+    SUM(CASE WHEN start_month ~ '^\s*$' AND start_month != '' THEN 1 ELSE 0 END) as whitespace_start_month
+FROM divvy_trips_2024;
+
+--error value in duration 
+SELECT COUNT(*) as error_value
+FROM divvy_trips_2024 where duration_minutes < 0;
+
+DELETE FROM divvy_trips_2024
+WHERE duration_minutes < 0;
